@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Editor</title>
+  <style type="text/css" media="screen">
+    body {
+        overflow: hidden;
+    }
+
+    #editor {
+        margin: 0;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        right: 0;
+    }
+  </style>
+</head>
+<body>
+<div style="width: 50%;">
+    <button id="assembleButton">Assemble</button>
+    
+</div>
+<pre id="editor">	sbi 0xA,4
+loop:
+    sbis 0x9,7
+    rjmp button_down
+    cbi 0xB,4
+    rjmp loop
+button_down:
+    sbi 0xB,4
+    rjmp loop</pre>
+
+<script src="src-min/ace.js" type="text/javascript" charset="utf-8"></script>
+<script type="module">
+    import assemble from "./assembler.js";
+    import {arrayBufferToHex, HexWriter} from "./hex.js";
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/twilight");
+    //editor.session.setMode("ace/mode/javascript");
+    document.getElementById("assembleButton").addEventListener("click", () => {
+        const asm = assemble(editor.getValue());
+        console.log(arrayBufferToHex(asm));
+        const hw = new HexWriter();
+        hw.writeBytes(asm);
+        console.log(hw);
+        // https://stackoverflow.com/questions/3665115/how-to-create-a-file-in-memory-for-user-to-download-but-not-through-server
+        const downloadElement = document.createElement('a');
+        downloadElement.setAttribute('href', hw.createObjectURL());
+        downloadElement.setAttribute('download', "asm_out.hex");
+        
+        downloadElement.style.display = 'none';
+        document.body.appendChild(downloadElement);
+
+        downloadElement.click();
+
+        document.body.removeChild(downloadElement);
+    });
+</script>
+
+
+</body>
+</html>
