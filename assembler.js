@@ -217,14 +217,126 @@ class RPAEncoder extends Encoder {
 //     rjmp: new RPAEncoder("rjmp", 0xC000),
 //     cbi: new SimpleParameterEncoder("cbi", 0x9800, [3, 5], [0, 3]),
 // };
+/* Skipped instructions:
+ * adiw
+ * andi
+ * cbr
+ * clr
+ * cpi
+ * elpm
+ * fmul
+ * fmuls
+ * fmulsu
+ * lac
+ * las
+ * lat
+ * ld (X,Y,Z)
+ * lpm
+ * lsl
+ * movw
+ * muls
+ * mulsu
+ * ori
+ * rol
+ * sbci
+ * sbiw
+ * sbr
+ * ser
+ * spm
+ * st
+ * sts
+ * subi
+ * tst
+ * xch
+*/
 const opcodes = {
-    sbis: new GeneralEncoder("sbis", "Ab", "10011011AAAAAbbb", ["number", 5, false], ["number", 3, false]),
-    sbi: new GeneralEncoder("sbi", "Ab", "10011010AAAAAbbb", ["number", 5, false], ["number", 3, false]),
-    rjmp: new GeneralEncoder("rjmp", "k", "1100kkkkkkkkkkkk", ["relative", 12, true]),
+    adc: new GeneralEncoder("adc", "dr", "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    add: new GeneralEncoder("add", "dr", "000011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    and: new GeneralEncoder("and", "dr", "001011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    asr: new GeneralEncoder("asr", "d", "1001010ddddd0101", ["register", 5, false]),
+    bclr: new GeneralEncoder("bclr", "s", "100101001sss1000", ["number", 3, false]),
+    bld: new GeneralEncoder("bld", "db", "1111100ddddd0bbb", ["register", 5, false], ["number", 3, false]),
+    brbc: new GeneralEncoder("brbc", "sk", "111101kkkkkkksss", ["number", 3, false], ["relative", 7, true]),
+    brbs: new GeneralEncoder("brbs", "sk", "111100kkkkkkksss", ["number", 3, false], ["relative", 7, true]),
+    brcc: new GeneralEncoder("brcc", "k", "111101kkkkkkk000", ["relative", 7, true]),
+    brcs: new GeneralEncoder("brcs", "k", "111100kkkkkkk000", ["relative", 7, true]),
+    break: new GeneralEncoder("break", "", "1001010110011000"),
+    breq: new GeneralEncoder("breq", "k", "111100kkkkkkk001", ["relative", 7, true]),
+    brge: new GeneralEncoder("brge", "k", "111101kkkkkkk100", ["relative", 7, true]),
+    brhc: new GeneralEncoder("brhc", "k", "111101kkkkkkk101", ["relative", 7, true]),
+    brhs: new GeneralEncoder("brhs", "k", "111100kkkkkkk101", ["relative", 7, true]),
+    brid: new GeneralEncoder("brid", "k", "111101kkkkkkk111", ["relative", 7, true]),
+    brie: new GeneralEncoder("brie", "k", "111100kkkkkkk111", ["relative", 7, true]),
+    brlo: new GeneralEncoder("brlo", "k", "111100kkkkkkk000", ["relative", 7, true]),
+    brlt: new GeneralEncoder("brlt", "k", "111100kkkkkkk100", ["relative", 7, true]),
+    brmi: new GeneralEncoder("brmi", "k", "111100kkkkkkk010", ["relative", 7, true]),
+    brpl: new GeneralEncoder("brpl", "k", "111101kkkkkkk010", ["relative", 7, true]),
+    brsh: new GeneralEncoder("brsh", "k", "111101kkkkkkk000", ["relative", 7, true]),
+    brtc: new GeneralEncoder("brtc", "k", "111101kkkkkkk110", ["relative", 7, true]),
+    brts: new GeneralEncoder("brts", "k", "111100kkkkkkk110", ["relative", 7, true]),
+    brvc: new GeneralEncoder("brvc", "k", "111101kkkkkkk011", ["relative", 7, true]),
+    brvs: new GeneralEncoder("brvs", "k", "111100kkkkkkk011", ["relative", 7, true]),
+    brne: new GeneralEncoder("brne", "k", "111101kkkkkkk001", ["relative", 7, true]),
+    bset: new GeneralEncoder("bset", "s", "100101000sss1000", ["number", 3, false]),
+    bst: new GeneralEncoder("bst", "db", "1111101ddddd0bbb", ["register", 5, false], ["number", 3, false]),
+    call: new GeneralEncoder("call", "k", "1001010kkkkk111kkkkkkkkkkkkkkkkk", ["absolute", 22, false]),
     cbi: new GeneralEncoder("cbi", "Ab", "10011000AAAAAbbb", ["number", 5, false], ["number", 3, false]),
+    clc: new GeneralEncoder("clc", "", "1001010010001000"),
+    clh: new GeneralEncoder("clh", "", "1001010011011000"),
+    cli: new GeneralEncoder("cli", "", "1001010011111000"),
+    cln: new GeneralEncoder("cln", "", "1001010010101000"),
+    cls: new GeneralEncoder("cls", "", "1001010011001000"),
+    clt: new GeneralEncoder("clt", "", "1001010011101000"),
+    clv: new GeneralEncoder("clv", "", "1001010010111000"),
+    clz: new GeneralEncoder("clz", "", "1001010010011000"),
+    com: new GeneralEncoder("com", "d", "1001010ddddd0000", ["register", 5, false]),
+    cp: new GeneralEncoder("cp", "dr", "000101rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    cpc: new GeneralEncoder("cpc", "dr", "000001rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    cpse: new GeneralEncoder("cpse", "dr", "000100rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    dec: new GeneralEncoder("dec", "d", "1001010ddddd1010", ["register", 5, false]),
+    des: new GeneralEncoder("des", "K", "10010100KKKK1011", ["number", 4, false]),
+    eicall: new GeneralEncoder("eicall", "", "1001010100011001"),
+    eijmp: new GeneralEncoder("eijmp", "", "1001010000011001"),
+    eor: new GeneralEncoder("eor", "dr", "001001rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    icall: new GeneralEncoder("icall", "", "1001010100001001"),
+    ijmp: new GeneralEncoder("ijmp", "", "1001010000001001"),
+    in: new GeneralEncoder("in", "dA", "10110AAdddddAAAA", ["register", 5, false], ["number", 6, false]),
+    inc: new GeneralEncoder("inc", "d", "1001010ddddd0011", ["register", 5, false]),
     jmp: new GeneralEncoder("jmp", "k", "1001010kkkkk110kkkkkkkkkkkkkkkkk", ["absolute", 22, false]),
-    lds: new GeneralEncoder("lds", "dk", "1001000ddddd0000kkkkkkkkkkkkkkkk", ["register", 5, false], ["number", 16, false]),
-    ldi: new GeneralEncoder("ldi", "dK", "1110KKKKddddKKKK", ["register", 5, false], ["number", 8, false]),
+    ldi: new GeneralEncoder("ldi", "dK", "1110KKKKddddKKKK", ["register", 5, false], ["number", 8, false]), // FIXME: check register bounds
+    lds: new GeneralEncoder("lds", "dk", "1001000ddddd0000kkkkkkkkkkkkkkkk", ["register", 5, false], ["number", 16, false]), // FIXME: aliased
+    lsr: new GeneralEncoder("lsr", "d", "1001010ddddd0110", ["register", 5, false]),
+    mov: new GeneralEncoder("mov", "dr", "001011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    mul: new GeneralEncoder("mul", "dr", "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    neg: new GeneralEncoder("neg", "d", "1001010ddddd0001", ["register", 5, false]),
+    nop: new GeneralEncoder("nop", "", "0000000000000000"),
+    or: new GeneralEncoder("or", "dr", "001010rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    out: new GeneralEncoder("out", "dA", "10111AAdddddAAAA", ["register", 5, false], ["number", 6, false]),
+    pop: new GeneralEncoder("pop", "d", "1001000ddddd1111", ["register", 5, false]),
+    push: new GeneralEncoder("push", "d", "1001001ddddd1111", ["register", 5, false]),
+    rcall: new GeneralEncoder("rcall", "k", "1101kkkkkkkkkkkk", ["relative", 12, true]),
+    ret: new GeneralEncoder("ret", "", "1001010100001000"),
+    reti: new GeneralEncoder("reti", "", "1001010100011000"),
+    rjmp: new GeneralEncoder("rjmp", "k", "1100kkkkkkkkkkkk", ["relative", 12, true]),
+    ror: new GeneralEncoder("ror", "d", "1001010ddddd0111", ["register", 5, false]),
+    sbc: new GeneralEncoder("sbc", "dr", "000010rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    sbi: new GeneralEncoder("sbi", "Ab", "10011010AAAAAbbb", ["number", 5, false], ["number", 3, false]),
+    sbic: new GeneralEncoder("sbic", "Ab", "10011001AAAAAbbb", ["number", 5, false], ["number", 3, false]),
+    sbis: new GeneralEncoder("sbis", "Ab", "10011011AAAAAbbb", ["number", 5, false], ["number", 3, false]),
+    sbrc: new GeneralEncoder("sbrc", "rb", "1111110rrrrr0bbb", ["register", 5, false], ["number", 3, false]),
+    sbrs: new GeneralEncoder("sbrs", "rb", "1111111rrrrr0bbb", ["register", 5, false], ["number", 3, false]),
+    sec: new GeneralEncoder("sec", "", "1001010000001000"),
+    seh: new GeneralEncoder("seh", "", "1001010001011000"),
+    sei: new GeneralEncoder("sei", "", "1001010001111000"),
+    sen: new GeneralEncoder("sen", "", "1001010000101000"),
+    ser: new GeneralEncoder("ser", "", "1001010001001000"),
+    set: new GeneralEncoder("set", "", "1001010001101000"),
+    sev: new GeneralEncoder("sev", "", "1001010000111000"),
+    sez: new GeneralEncoder("sez", "", "1001010000011000"),
+    sleep: new GeneralEncoder("sleep", "", "1001010110001000"),
+    sub: new GeneralEncoder("sub", "dr", "000110rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    swap: new GeneralEncoder("swap", "d", "1001010ddddd0010", ["register", 5, false]),
+    wdr: new GeneralEncoder("wdr", "", "1001010110101000"),
 };
 const lineRegex = /^(?<label>[^;:%]+:)?\s*(?:(?<inst>[A-Za-z0-9]+)(?:\s+(?<param>[^;]*))?)?(?:;.*)?$|^\s*%define\s+(?<const>[^ ]+)\s+(?<value>[^ ]+)\s*(?:;.*)?$/;
 /* Assemble a code block to contiguous memory, starting at offset
