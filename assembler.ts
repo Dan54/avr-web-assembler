@@ -239,6 +239,41 @@ class RPAEncoder extends Encoder {
     
 }
 
+class ImmediateEncoder extends Encoder {
+    name: string;
+    prefix: number;
+    encode(params: string[], _index: number, _labelUsages: LabelUsage[], outputArray: number[], constants: Dictionary<string>): void {
+        if (params.length !== 2) {
+            console.error(`Could not encode ${this.name} ${params.join(", ")}: expected 2 parameters, received ${params.length}`);
+            return;
+        }
+        const registerStr = constants[params[0]] || params[0];
+        let register = parseInt(registerStr.substring(1));
+        if (!Number.isInteger(register)) {
+            register = 16;
+            console.error(`Could not parse parameter 0 of ${this.name} ${params.join(', ')} (${params[0]}); expected r16-r31`);
+        }
+        else if (registerStr[0] !== 'r' || register < 16 || register >= 32) {
+            console.error(`Could not parse parameter 0 of ${this.name} ${params.join(', ')} (${params[0]}); expected r16-r31`);
+        }
+        const valueStr = constants[params[0]] || params[0];
+        let value = GeneralEncoder.parseNumber(valueStr);
+        if (!Number.isInteger(value)) {
+            value = 0;
+            console.error(`Could not parse parameter 1 of ${this.name} ${params.join(', ')} (${params[1]}); expected integer`);
+        }
+        if (value < 0 || value >= 256) {
+            console.warn(`Parameter 1 of ${this.name} ${params.join(', ')} (${params[1]}) out of range: expected [0..256)`)
+        }
+        outputArray.push((this.prefix << 12) | ((value & 0xf0) << 8) | ((register & 0xf) << 4) | (value & 0xf));
+    }
+    constructor(name: string, prefix: number) {
+        super()
+        this.name = name;
+        this.prefix = prefix;
+    }
+}
+
 // TODO: macros, usb (see email), think about testing and evaluation (is it useful) (github pages to host)
 // VERSION CONTROL
 // find people to test it
@@ -253,10 +288,8 @@ class RPAEncoder extends Encoder {
 
 /* Skipped instructions:
  * adiw
- * andi
  * cbr
  * clr
- * cpi
  * elpm
  * fmul
  * fmuls
@@ -270,16 +303,13 @@ class RPAEncoder extends Encoder {
  * movw
  * muls
  * mulsu
- * ori
  * rol
- * sbci
  * sbiw
  * sbr
  * ser
  * spm
  * st
  * sts
- * subi
  * tst
  * xch
 */
@@ -288,6 +318,7 @@ const opcodes = {
     adc: new GeneralEncoder("adc", "dr",   "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     add: new GeneralEncoder("add", "dr",   "000011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     and: new GeneralEncoder("and", "dr",   "001011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    andi: new ImmediateEncoder("andi", 0b0111),
     asr: new GeneralEncoder("asr", "d",    "1001010ddddd0101", ["register", 5, false]),
     bclr: new GeneralEncoder("bclr", "s",  "100101001sss1000", ["number", 3, false]),
     bld: new GeneralEncoder("bld", "db",   "1111100ddddd0bbb", ["register", 5, false], ["number", 3, false]),
@@ -327,6 +358,7 @@ const opcodes = {
     com: new GeneralEncoder("com", "d",    "1001010ddddd0000", ["register", 5, false]),
     cp: new GeneralEncoder("cp", "dr",     "000101rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     cpc: new GeneralEncoder("cpc", "dr",   "000001rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    cpi: new ImmediateEncoder("cpi", 0b0011),
     cpse: new GeneralEncoder("cpse", "dr", "000100rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     dec: new GeneralEncoder("dec", "d",    "1001010ddddd1010", ["register", 5, false]),
     des: new GeneralEncoder("des", "K",    "10010100KKKK1011", ["number", 4, false]),
@@ -338,7 +370,7 @@ const opcodes = {
     in: new GeneralEncoder("in", "dA",     "10110AAdddddAAAA", ["register", 5, false], ["number", 6, false]),
     inc: new GeneralEncoder("inc", "d",    "1001010ddddd0011", ["register", 5, false]),
     jmp: new GeneralEncoder("jmp", "k",    "1001010kkkkk110kkkkkkkkkkkkkkkkk", ["absolute", 22, false]),
-    ldi: new GeneralEncoder("ldi", "dK",   "1110KKKKddddKKKK", ["register", 5, false], ["number", 8, false]), // FIXME: check register bounds
+    ldi: new ImmediateEncoder("ldi", 0b1110), 
     lds: new GeneralEncoder("lds", "dk",   "1001000ddddd0000kkkkkkkkkkkkkkkk", ["register", 5, false], ["number", 16, false]), // FIXME: aliased
     lsr: new GeneralEncoder("lsr", "d",    "1001010ddddd0110", ["register", 5, false]),
     mov: new GeneralEncoder("mov", "dr",   "001011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
@@ -346,6 +378,7 @@ const opcodes = {
     neg: new GeneralEncoder("neg", "d",    "1001010ddddd0001", ["register", 5, false]),
     nop: new GeneralEncoder("nop", "",     "0000000000000000"),
     or: new GeneralEncoder("or", "dr",     "001010rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    ori: new ImmediateEncoder("ori", 0b0110),
     out: new GeneralEncoder("out", "dA",   "10111AAdddddAAAA", ["register", 5, false], ["number", 6, false]),
     pop: new GeneralEncoder("pop", "d",    "1001000ddddd1111", ["register", 5, false]),
     push: new GeneralEncoder("push", "d",  "1001001ddddd1111", ["register", 5, false]),
@@ -355,6 +388,7 @@ const opcodes = {
     rjmp: new GeneralEncoder("rjmp", "k",  "1100kkkkkkkkkkkk", ["relative", 12, true]),
     ror: new GeneralEncoder("ror", "d",    "1001010ddddd0111", ["register", 5, false]),
     sbc: new GeneralEncoder("sbc", "dr",   "000010rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    sbci: new ImmediateEncoder("sbci", 0b0100),
     sbi: new GeneralEncoder("sbi", "Ab",   "10011010AAAAAbbb", ["number", 5, false], ["number", 3, false]),
     sbic: new GeneralEncoder("sbic", "Ab", "10011001AAAAAbbb", ["number", 5, false], ["number", 3, false]),
     sbis: new GeneralEncoder("sbis", "Ab", "10011011AAAAAbbb", ["number", 5, false], ["number", 3, false]),
@@ -370,6 +404,7 @@ const opcodes = {
     sez: new GeneralEncoder("sez", "",     "1001010000011000"),
     sleep: new GeneralEncoder("sleep", "", "1001010110001000"),
     sub: new GeneralEncoder("sub", "dr",   "000110rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    subi: new ImmediateEncoder("subi", 0b0101),
     swap: new GeneralEncoder("swap", "d",  "1001010ddddd0010", ["register", 5, false]),
     wdr: new GeneralEncoder("wdr", "",     "1001010110101000"),
 };
