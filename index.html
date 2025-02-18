@@ -22,6 +22,8 @@
 <body>
 <div style="width: 50%;">
     <button id="assembleButton">Assemble</button>
+    <button id="eraseButton">Erase</button>
+    <button id="loadButton">Load</button>
     
 </div>
 <pre id="editor">	sbi 0xA,4
@@ -38,6 +40,7 @@ button_down:
 <script type="module">
     import assemble from "./assembler.js";
     import {arrayBufferToHex, HexWriter} from "./hex.js";
+    import {eraseDevice, programDevice, connectToDevice} from "./programmer.js";
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/twilight");
     //editor.session.setMode("ace/mode/javascript");
@@ -58,6 +61,12 @@ button_down:
         downloadElement.click();
 
         document.body.removeChild(downloadElement);
+    });
+    connectToDevice();
+    document.getElementById("eraseButton").onclick(eraseDevice);
+    document.getElementById("loadButton").onclick(() => {
+        const asm = assemble(editor.getValue());
+        programDevice(new Uint8Array(asm));
     });
 </script>
 

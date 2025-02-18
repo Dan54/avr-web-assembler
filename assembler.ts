@@ -102,12 +102,13 @@ abstract class Encoder {
     }
 }
 
+
 class GeneralEncoder extends Encoder {
     name: string;
     baseWords: number[];
     paramUsages: ParamUsage[];
-    paramTypes: [string, number, boolean][]
-    constructor(name: string, params: string, opcode: string, ...paramTypes: [string, number, boolean][]) {
+    paramTypes: ([string, number, boolean] | [string, Map<number, number> | Set<number>])[]
+    constructor(name: string, params: string, opcode: string, ...paramTypes: ([string, number, boolean] | [string, Map<number, number> | Set<number>])[]) {
         super();
         this.name = name;
         const parsedOpcode = ParamUsage.generateUsages(params, opcode);
@@ -138,6 +139,14 @@ class GeneralEncoder extends Encoder {
                         pValue = 0;
                         console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected register`);
                     }
+                    else if (typeof t[1] === 'object') {
+                        if (!t[1].has(pValue)) {
+                            console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); register out of bounds`);
+                        }
+                        else if (t[1] instanceof Map) {
+                            pValue = t[1].get(pValue)!;
+                        }
+                    }
                     else if (p[0] !== 'r' || pValue < 0 || pValue >= 32) {
                         console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected register`);
                     }
@@ -158,19 +167,25 @@ class GeneralEncoder extends Encoder {
                     }
                     break;
                 default:
+                    pValue = 0;
+                    if (p.toUpperCase() !== t[0]) {
+                        console.error(`Error parsing parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected ${t[0]}`);
+                    }
                     break;
             }
             paramValues.push(pValue);
             isLabel.push(useLabel);
             // do bounds check
-            let min = 0;
-            let max = 1 << t[1];
-            if (t[2] === true) { // signed parameter
-                max = max / 2;
-                min = -max;
-            }
-            if (pValue < min || pValue >= max) {
-                console.warn(`Parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}) out of range: expected [${min}..${max})`)
+            if (typeof t[1] === 'number') {
+                let min = 0;
+                let max = 1 << t[1];
+                if (t[2] === true) { // signed parameter
+                    max = max / 2;
+                    min = -max;
+                }
+                if (pValue < min || pValue >= max) {
+                    console.warn(`Parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}) out of range: expected [${min}..${max})`)
+                }
             }
         }
         // console.log(`${this.name} ${paramValues}`)
@@ -289,30 +304,27 @@ class ImmediateEncoder extends Encoder {
 /* Skipped instructions:
  * adiw
  * cbr
- * clr
  * elpm
- * fmul
- * fmuls
- * fmulsu
- * lac
- * las
- * lat
  * ld (X,Y,Z)
  * lpm
- * lsl
  * movw
- * muls
- * mulsu
- * rol
  * sbiw
- * sbr
- * ser
  * spm
  * st
  * sts
- * tst
- * xch
 */
+
+const r_16_23 = new Set([16,17,18,19,20,21,22,23]);
+const r_16_31 = new Set([16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]);
+
+const clrEncoder = new GeneralEncoder("clr", "d", "001001ddddd00000", ["register", 5, false]);
+clrEncoder.paramUsages.push(new ParamUsage(0, 0, 0, 0x1f));
+const lslEncoder = new GeneralEncoder("lsl", "d", "000011ddddd00000", ["register", 5, false]);
+lslEncoder.paramUsages.push(new ParamUsage(0, 0, 0, 0x1f));
+const rolEncoder = new GeneralEncoder("rol", "d", "000111ddddd00000", ["register", 5, false]);
+rolEncoder.paramUsages.push(new ParamUsage(0, 0, 0, 0x1f));
+const tstEncoder = new GeneralEncoder("tst", "d", "001000ddddd00000", ["register", 5, false]);
+tstEncoder.paramUsages.push(new ParamUsage(0, 0, 0, 0x1f));
 
 const opcodes = {
     adc: new GeneralEncoder("adc", "dr",   "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
@@ -351,6 +363,7 @@ const opcodes = {
     clh: new GeneralEncoder("clh", "",     "1001010011011000"),
     cli: new GeneralEncoder("cli", "",     "1001010011111000"),
     cln: new GeneralEncoder("cln", "",     "1001010010101000"),
+    clr: clrEncoder,
     cls: new GeneralEncoder("cls", "",     "1001010011001000"),
     clt: new GeneralEncoder("clt", "",     "1001010011101000"),
     clv: new GeneralEncoder("clv", "",     "1001010010111000"),
@@ -365,16 +378,25 @@ const opcodes = {
     eicall: new GeneralEncoder("eicall","","1001010100011001"),
     eijmp: new GeneralEncoder("eijmp", "", "1001010000011001"),
     eor: new GeneralEncoder("eor", "dr",   "001001rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    fmul: new GeneralEncoder("fmul", "dr", "000000110ddd1rrr", ["register", r_16_23], ["register", r_16_23]),
+    fmuls: new GeneralEncoder("fmuls","dr","000000111ddd0rrr", ["register", r_16_23], ["register", r_16_23]),
+    fmulsu: new GeneralEncoder("fmulsu","dr","000000111ddd1rrr", ["register", r_16_23], ["register", r_16_23]),
     icall: new GeneralEncoder("icall", "", "1001010100001001"),
     ijmp: new GeneralEncoder("ijmp", "",   "1001010000001001"),
     in: new GeneralEncoder("in", "dA",     "10110AAdddddAAAA", ["register", 5, false], ["number", 6, false]),
     inc: new GeneralEncoder("inc", "d",    "1001010ddddd0011", ["register", 5, false]),
     jmp: new GeneralEncoder("jmp", "k",    "1001010kkkkk110kkkkkkkkkkkkkkkkk", ["absolute", 22, false]),
+    lac: new GeneralEncoder("lac", "Zr",   "1001001rrrrr0110", ["Z", 0, false], ["register", 5, false]),
+    las: new GeneralEncoder("las", "Zr",   "1001001rrrrr0101", ["Z", 0, false], ["register", 5, false]),
+    lat: new GeneralEncoder("lat", "Zr",   "1001001rrrrr0111", ["Z", 0, false], ["register", 5, false]),
     ldi: new ImmediateEncoder("ldi", 0b1110), 
     lds: new GeneralEncoder("lds", "dk",   "1001000ddddd0000kkkkkkkkkkkkkkkk", ["register", 5, false], ["number", 16, false]), // FIXME: aliased
+    lsl: lslEncoder,
     lsr: new GeneralEncoder("lsr", "d",    "1001010ddddd0110", ["register", 5, false]),
     mov: new GeneralEncoder("mov", "dr",   "001011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     mul: new GeneralEncoder("mul", "dr",   "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    muls: new GeneralEncoder("muls", "dr", "00000010ddddrrrr", ["register", r_16_31], ["register", r_16_31]),
+    mulsu: new GeneralEncoder("mulsu","dr","000000110ddd0rrr", ["register", r_16_23], ["register", r_16_23]),
     neg: new GeneralEncoder("neg", "d",    "1001010ddddd0001", ["register", 5, false]),
     nop: new GeneralEncoder("nop", "",     "0000000000000000"),
     or: new GeneralEncoder("or", "dr",     "001010rdddddrrrr", ["register", 5, false], ["register", 5, false]),
@@ -386,19 +408,22 @@ const opcodes = {
     ret: new GeneralEncoder("ret", "",     "1001010100001000"),
     reti: new GeneralEncoder("reti", "",   "1001010100011000"),
     rjmp: new GeneralEncoder("rjmp", "k",  "1100kkkkkkkkkkkk", ["relative", 12, true]),
+    rol: rolEncoder,
     ror: new GeneralEncoder("ror", "d",    "1001010ddddd0111", ["register", 5, false]),
     sbc: new GeneralEncoder("sbc", "dr",   "000010rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     sbci: new ImmediateEncoder("sbci", 0b0100),
     sbi: new GeneralEncoder("sbi", "Ab",   "10011010AAAAAbbb", ["number", 5, false], ["number", 3, false]),
     sbic: new GeneralEncoder("sbic", "Ab", "10011001AAAAAbbb", ["number", 5, false], ["number", 3, false]),
     sbis: new GeneralEncoder("sbis", "Ab", "10011011AAAAAbbb", ["number", 5, false], ["number", 3, false]),
+    sbr: new ImmediateEncoder("sbr", 0b0110),
     sbrc: new GeneralEncoder("sbrc", "rb", "1111110rrrrr0bbb", ["register", 5, false], ["number", 3, false]),
     sbrs: new GeneralEncoder("sbrs", "rb", "1111111rrrrr0bbb", ["register", 5, false], ["number", 3, false]),
     sec: new GeneralEncoder("sec", "",     "1001010000001000"),
     seh: new GeneralEncoder("seh", "",     "1001010001011000"),
     sei: new GeneralEncoder("sei", "",     "1001010001111000"),
     sen: new GeneralEncoder("sen", "",     "1001010000101000"),
-    ser: new GeneralEncoder("ser", "",     "1001010001001000"),
+    ser: new GeneralEncoder("ser", "d",    "11101111dddd1111", ["register", r_16_31]),
+    ses: new GeneralEncoder("ses", "",     "1001010001001000"),
     set: new GeneralEncoder("set", "",     "1001010001101000"),
     sev: new GeneralEncoder("sev", "",     "1001010000111000"),
     sez: new GeneralEncoder("sez", "",     "1001010000011000"),
@@ -406,7 +431,9 @@ const opcodes = {
     sub: new GeneralEncoder("sub", "dr",   "000110rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     subi: new ImmediateEncoder("subi", 0b0101),
     swap: new GeneralEncoder("swap", "d",  "1001010ddddd0010", ["register", 5, false]),
+    tst: tstEncoder,
     wdr: new GeneralEncoder("wdr", "",     "1001010110101000"),
+    xch: new GeneralEncoder("xch", "Zr",   "1001001rrrrr0100", ["Z", 0, false], ["regiser", 5, false]),
 };
 
 const lineRegex = /^(?<label>[^;:%]+:)?\s*(?:(?<inst>[A-Za-z0-9]+)(?:\s+(?<param>[^;]*))?)?(?:;.*)?$|^\s*%define\s+(?<const>[^ ]+)\s+(?<value>[^ ]+)\s*(?:;.*)?$/;
