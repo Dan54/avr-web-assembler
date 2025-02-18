@@ -63,8 +63,8 @@ button_down:
         document.body.removeChild(downloadElement);
     });
     connectToDevice();
-    document.getElementById("eraseButton").onclick(eraseDevice);
-    document.getElementById("loadButton").onclick(() => {
+    document.getElementById("eraseButton").addEventListener("click", eraseDevice);
+    document.getElementById("loadButton").addEventListener("click", () => {
         const asm = assemble(editor.getValue());
         programDevice(new Uint8Array(asm));
     });
