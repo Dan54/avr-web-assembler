@@ -22,6 +22,7 @@
 <body>
 <div style="width: 50%;">
     <button id="assembleButton">Assemble</button>
+    <button id="connectButton">Connect</button>
     <button id="eraseButton">Erase</button>
     <button id="loadButton">Load</button>
     
@@ -62,7 +63,7 @@ button_down:
 
         document.body.removeChild(downloadElement);
     });
-    connectToDevice();
+    document.getElementById("eraseButton").addEventListener("click", connectToDevice);
     document.getElementById("eraseButton").addEventListener("click", eraseDevice);
     document.getElementById("loadButton").addEventListener("click", () => {
         const asm = assemble(editor.getValue());
