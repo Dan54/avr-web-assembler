@@ -84,8 +84,12 @@ export async function connectToDevice() {
 
     const devices = await navigator.usb.getDevices();
 
-
-    device = devices[0];
+    if (devices.length === 0) {
+        device = await navigator.usb.requestDevice({ filters : [{ vendorId: 1003 }] });
+    }
+    else {
+        device = devices[0];
+    }
 
 
     if (device && !device.opened) {
