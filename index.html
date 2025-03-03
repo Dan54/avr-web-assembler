@@ -25,7 +25,7 @@
     <button id="connectButton">Connect</button>
     <button id="eraseButton">Erase</button>
     <button id="loadButton">Load</button>
-    
+    <p hidden id="usbUnsupportedMsg">Your browser does not support WebUSB. Try using Chrome, Edge, or Opera.</p>
 </div>
 <pre id="editor">	sbi 0xA,4
 loop:
@@ -63,12 +63,20 @@ button_down:
 
         document.body.removeChild(downloadElement);
     });
-    document.getElementById("eraseButton").addEventListener("click", connectToDevice);
-    document.getElementById("eraseButton").addEventListener("click", eraseDevice);
-    document.getElementById("loadButton").addEventListener("click", () => {
-        const asm = assemble(editor.getValue());
-        programDevice(new Uint8Array(asm));
-    });
+    if (navigator.usb) {
+        document.getElementById("connectButton").addEventListener("click", connectToDevice);
+        document.getElementById("eraseButton").addEventListener("click", eraseDevice);
+        document.getElementById("loadButton").addEventListener("click", () => {
+            const asm = assemble(editor.getValue());
+            programDevice(new Uint8Array(asm));
+        });
+    }
+    else {
+        document.getElementById("connectButton").disabled = true;
+        document.getElementById("eraseButton").disabled = true;
+        document.getElementById("loadButton").disabled = true;
+        document.getElementById("usbUnsupportedMsg").hidden = false;
+    }
 </script>
 
 

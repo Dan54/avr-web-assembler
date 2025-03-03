@@ -409,26 +409,27 @@ export async function programDevice(program) {
 
 }
 
-
-navigator.usb.onconnect = async () => {
-
-
-    console.log("Connect");
+if (navigator.usb) {
+    navigator.usb.onconnect = async () => {
 
 
-    connectToDevice();
+        console.log("Connect");
 
 
-};
+        connectToDevice();
 
 
-navigator.usb.ondisconnect = () => {
+    };
 
 
-    device = null;
+    navigator.usb.ondisconnect = () => {
 
 
-    console.log("Disconnect");
+        device = null;
 
-    
-};
+
+        console.log("Disconnect");
+
+        
+    };
+}
