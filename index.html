@@ -25,7 +25,8 @@
     <button id="connectButton">Connect</button>
     <button id="eraseButton">Erase</button>
     <button id="loadButton">Load</button>
-    <p hidden id="usbUnsupportedMsg">Your browser does not support WebUSB. Try using Chrome, Edge, or Opera.</p>
+    <p hidden id="usbUnsupportedMsg">Your browser does not support WebUSB. Try using Chrome, Edge, or Opera. The assembler will still work in this browser.</p>
+    <p>Windows computers need to have a driver set up to interface with the AVR microcontroller. You can set this up using the instructions <a href="https://github.com/tmk/tmk_keyboard/wiki/WinUSB-Driver">here</a>.</p>
 </div>
 <pre id="editor">	sbi 0xA,4
 loop:
