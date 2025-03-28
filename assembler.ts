@@ -2,6 +2,19 @@ interface Dictionary<T> {
     [key: string]: T;
 }
 
+// Finish instructions, test, eval (structured) (no better options)
+// Merge erase and load
+// disable load button with nothing connected, give error and suggestion
+
+/*
+Report:
+Intro is more summary say what you did and why
+Background - what is avr, webusb, dfu
+Core chapters: title like browser based assembler implementation
+Testing and evaluation chapter(s) - no bugs, is it useful?
+Conclusions - summarise again, reflections (use I here), future work (new project's worth) (e.g. reference, emulator or compiler)
+*/
+
 class ParamUsage {
     paramIndex: number;
     wordIndex: number;
@@ -294,13 +307,6 @@ class ImmediateEncoder extends Encoder {
 // find people to test it
 // automated testing
 
-// const opcodes = {
-//     sbis: new SimpleParameterEncoder("sbis", 0x9B00, [3, 5], [0, 3]),
-//     sbi: new SimpleParameterEncoder("sbi", 0x9A00, [3, 5], [0, 3]),
-//     rjmp: new RPAEncoder("rjmp", 0xC000),
-//     cbi: new SimpleParameterEncoder("cbi", 0x9800, [3, 5], [0, 3]),
-// };
-
 /* Skipped instructions:
  * adiw
  * cbr
@@ -326,7 +332,7 @@ rolEncoder.paramUsages.push(new ParamUsage(0, 0, 0, 0x1f));
 const tstEncoder = new GeneralEncoder("tst", "d", "001000ddddd00000", ["register", 5, false]);
 tstEncoder.paramUsages.push(new ParamUsage(0, 0, 0, 0x1f));
 
-const opcodes = {
+const encoders = {
     adc: new GeneralEncoder("adc", "dr",   "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     add: new GeneralEncoder("add", "dr",   "000011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     and: new GeneralEncoder("and", "dr",   "001011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
@@ -452,10 +458,13 @@ function assembleBlock(lines: string[], offset: number, labels: Dictionary<numbe
                 labels[labelName] = binaryCode.length + offset;
             }
             if (match.inst) {
-                const opcode = match.inst.toLowerCase();
+                const instName = match.inst.toLowerCase();
                 const params = (match.param || '').split(',').map(s => s.trim());
-                if (opcode in opcodes) {
-                    opcodes[opcode].encode(params, binaryCode.length + offset, labelUsages, binaryCode, constants);
+                if (instName in encoders) {
+                    encoders[instName].encode(params, binaryCode.length + offset, labelUsages, binaryCode, constants);
+                }
+                else {
+                    console.error(`${instName} is not a valid instruction name`);
                 }
             }
             if (match.const) {
