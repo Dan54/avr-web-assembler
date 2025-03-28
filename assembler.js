@@ -309,14 +309,14 @@ class CBREncoder extends Encoder {
 */
 const r_16_23 = new Set([16, 17, 18, 19, 20, 21, 22, 23]);
 const r_16_31 = new Set([16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]);
-const clrEncoder = new GeneralEncoder("clr", "d", "001001ddddd00000", ["register", 5, false]);
-clrEncoder.paramUsages.push(new ParamUsage(0, 0, 0, 0x1f));
-const lslEncoder = new GeneralEncoder("lsl", "d", "000011ddddd00000", ["register", 5, false]);
-lslEncoder.paramUsages.push(new ParamUsage(0, 0, 0, 0x1f));
-const rolEncoder = new GeneralEncoder("rol", "d", "000111ddddd00000", ["register", 5, false]);
-rolEncoder.paramUsages.push(new ParamUsage(0, 0, 0, 0x1f));
-const tstEncoder = new GeneralEncoder("tst", "d", "001000ddddd00000", ["register", 5, false]);
-tstEncoder.paramUsages.push(new ParamUsage(0, 0, 0, 0x1f));
+const clrEncoder = new GeneralEncoder("clr", "d", "001001d00000dddd", ["register", 5, false]);
+clrEncoder.paramUsages.push(new ParamUsage(0, 0, 4, 0x1f0));
+const lslEncoder = new GeneralEncoder("lsl", "d", "000011d00000dddd", ["register", 5, false]);
+lslEncoder.paramUsages.push(new ParamUsage(0, 0, 4, 0x1f0));
+const rolEncoder = new GeneralEncoder("rol", "d", "000111d00000dddd", ["register", 5, false]);
+rolEncoder.paramUsages.push(new ParamUsage(0, 0, 4, 0x1f0));
+const tstEncoder = new GeneralEncoder("tst", "d", "001000d00000dddd", ["register", 5, false]);
+tstEncoder.paramUsages.push(new ParamUsage(0, 0, 4, 0x1f0));
 const encoders = {
     adc: new GeneralEncoder("adc", "dr", "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     add: new GeneralEncoder("add", "dr", "000011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
