@@ -152,6 +152,9 @@ class GeneralEncoder extends Encoder {
                         pValue = 0;
                         console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected register`);
                     }
+                    else if (p[0] !== 'r' || pValue < 0 || pValue >= 32) {
+                        console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected register`);
+                    }
                     else if (typeof t[1] === 'object') {
                         if (!t[1].has(pValue)) {
                             console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); register out of bounds`);
@@ -159,9 +162,6 @@ class GeneralEncoder extends Encoder {
                         else if (t[1] instanceof Map) {
                             pValue = t[1].get(pValue)!;
                         }
-                    }
-                    else if (p[0] !== 'r' || pValue < 0 || pValue >= 32) {
-                        console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected register`);
                     }
                     break;
                 case 'number':
