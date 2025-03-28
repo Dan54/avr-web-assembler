@@ -264,13 +264,40 @@ class ImmediateEncoder extends Encoder {
         this.prefix = prefix;
     }
 }
+// A dedicated encoder for the cbr instruction
+class CBREncoder extends Encoder {
+    constructor() {
+        super();
+    }
+    encode(params, _index, _labelUsages, outputArray, constants) {
+        const registerStr = constants[params[0]] || params[0];
+        let register = parseInt(registerStr.substring(1));
+        if (!Number.isInteger(register)) {
+            register = 16;
+            console.error(`Could not parse parameter 0 of cbr ${params.join(', ')} (${params[0]}); expected r16-r31`);
+        }
+        else if (registerStr[0] !== 'r' || register < 16 || register >= 32) {
+            console.error(`Could not parse parameter 0 of cbr ${params.join(', ')} (${params[0]}); expected r16-r31`);
+        }
+        const valueStr = constants[params[0]] || params[0];
+        let value = GeneralEncoder.parseNumber(valueStr);
+        if (!Number.isInteger(value)) {
+            value = 0;
+            console.error(`Could not parse parameter 1 of cbr ${params.join(', ')} (${params[1]}); expected integer`);
+        }
+        if (value < 0 || value >= 256) {
+            console.warn(`Parameter 1 of cbr ${params.join(', ')} (${params[1]}) out of range: expected [0..256)`);
+        }
+        // use xor to automatically take the one's complement
+        outputArray.push(32527 ^ ((value & 0xf0) << 8) ^ ((register & 0xf) << 4) ^ (value & 0xf));
+    }
+}
 // TODO: macros, usb (see email), think about testing and evaluation (is it useful) (github pages to host)
 // VERSION CONTROL
 // find people to test it
 // automated testing
 /* Skipped instructions:
  * adiw
- * cbr
  * elpm
  * ld (X,Y,Z)
  * lpm
@@ -323,6 +350,7 @@ const encoders = {
     bst: new GeneralEncoder("bst", "db", "1111101ddddd0bbb", ["register", 5, false], ["number", 3, false]),
     call: new GeneralEncoder("call", "k", "1001010kkkkk111kkkkkkkkkkkkkkkkk", ["absolute", 22, false]),
     cbi: new GeneralEncoder("cbi", "Ab", "10011000AAAAAbbb", ["number", 5, false], ["number", 3, false]),
+    cbr: new CBREncoder(),
     clc: new GeneralEncoder("clc", "", "1001010010001000"),
     clh: new GeneralEncoder("clh", "", "1001010011011000"),
     cli: new GeneralEncoder("cli", "", "1001010011111000"),
