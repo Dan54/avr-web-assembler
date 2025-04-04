@@ -11,6 +11,8 @@ Testing and evaluation chapter(s) - no bugs, is it useful?
 Conclusions - summarise again, reflections (use I here), future work (new project's worth) (e.g. reference, emulator or compiler)
 */
 
+import defaultMacros from "./macros";
+
 class ParamUsage {
     paramIndex: number;
     wordIndex: number;
@@ -649,7 +651,7 @@ function doSecondPass(binaryCode: number[], labelUsages: LabelUsage[], labels: M
 
 export default function assemble(code: string): ArrayBuffer {
     const labels = new Map<string, number>();
-    const constants = new Map<string, string>();
+    const constants = new Map(defaultMacros);
     const lines = code.split('\n');
     const firstPass = assembleBlock(lines, 0, labels, constants);
     return doSecondPass(firstPass[0], firstPass[1], labels);

@@ -9,6 +9,7 @@ Core chapters: title like browser based assembler implementation
 Testing and evaluation chapter(s) - no bugs, is it useful?
 Conclusions - summarise again, reflections (use I here), future work (new project's worth) (e.g. reference, emulator or compiler)
 */
+import defaultMacros from "./macros";
 class ParamUsage {
     constructor(paramIndex, wordIndex, shift, mask) {
         this.paramIndex = paramIndex;
@@ -568,7 +569,7 @@ function doSecondPass(binaryCode, labelUsages, labels) {
 }
 export default function assemble(code) {
     const labels = new Map();
-    const constants = new Map();
+    const constants = new Map(defaultMacros);
     const lines = code.split('\n');
     const firstPass = assembleBlock(lines, 0, labels, constants);
     return doSecondPass(firstPass[0], firstPass[1], labels);
