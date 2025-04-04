@@ -98,6 +98,7 @@ class Encoder {
         }
     }
 }
+const wordRegex = /r([0-9]{1,2})\s*:\s*r([0-9]{1,2})/i;
 class GeneralEncoder extends Encoder {
     constructor(name, params, opcode, ...paramTypes) {
         super();
@@ -130,7 +131,7 @@ class GeneralEncoder extends Encoder {
                         pValue = 0;
                         console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected register`);
                     }
-                    else if (p[0] !== 'r' || pValue < 0 || pValue >= 32) {
+                    else if (p[0].toLowerCase() !== 'r' || pValue < 0 || pValue >= 32) {
                         console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected register`);
                     }
                     else if (typeof t[1] === 'object') {
@@ -157,6 +158,37 @@ class GeneralEncoder extends Encoder {
                         useLabel = true;
                     }
                     break;
+                case 'word': {
+                    const registers = p.match(wordRegex);
+                    if (registers == null) {
+                        console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected word`);
+                        break;
+                    }
+                    pValue = parseInt(registers[2]);
+                    if (!Number.isInteger(pValue)) {
+                        pValue = 0;
+                        console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected word`);
+                    }
+                    else if (p[0] !== 'r' || pValue < 0 || pValue >= 32) {
+                        console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected word`);
+                    }
+                    else if (parseInt(registers[1]) !== pValue + 1) {
+                        console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); expected word`);
+                    }
+                    else if (typeof t[1] === 'object') {
+                        if (!t[1].has(pValue)) {
+                            console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); register out of bounds`);
+                        }
+                        else if (t[1] instanceof Map) {
+                            pValue = t[1].get(pValue);
+                        }
+                    }
+                    else if (pValue % 2 !== 0) {
+                        console.error(`Could not parse parameter ${i} of ${this.name} ${params.join(', ')} (${params[i]}); least significant byte should be an even register`);
+                    }
+                    pValue >>= 1;
+                    break;
+                }
                 default:
                     pValue = 0;
                     if (p.toUpperCase() !== t[0]) {
@@ -292,19 +324,70 @@ class CBREncoder extends Encoder {
         outputArray.push(32527 ^ ((value & 0xf0) << 8) ^ ((register & 0xf) << 4) ^ (value & 0xf));
     }
 }
+class MultiOpcodeEncoder extends Encoder {
+    constructor(name, ...encodings) {
+        super();
+        this.name = name;
+        this.encodings = [];
+        encodings.forEach(encoding => {
+            const processed = ParamUsage.generateUsages(encoding[0], encoding[1]);
+            this.encodings.push([processed[1], processed[0], encoding[2]]);
+        });
+    }
+    encode(params, _index, _labelUsages, outputArray, constants) {
+        for (let i = 0; i < this.encodings.length; i++) {
+            const encoding = this.encodings[i];
+            let valid = true;
+            if (params.length !== encoding[2].length) {
+                continue;
+            }
+            const values = [];
+            for (let j = 0; j < params.length; j++) {
+                const param = constants[params[j]] || params[j];
+                const match = param.match(encoding[2][j][0]);
+                if (match === null) {
+                    valid = false;
+                    break;
+                }
+                if (match.length > 1) {
+                    let paramVal = parseInt(match[1]);
+                    if (!Number.isInteger(paramVal)) {
+                        paramVal = 0;
+                        console.error(`Could not parse parameter ${j} to ${this.name} ${params.join(", ")}: expected ${match[1]} to be an integer`);
+                    }
+                    else if (paramVal >= 1 << encoding[2][j][1]) {
+                        console.error(`Parameter ${j} to ${this.name} ${params.join(", ")} out of range`);
+                    }
+                    values.push(paramVal);
+                }
+                else {
+                    values.push(0);
+                }
+            }
+            if (!valid) {
+                continue;
+            }
+            const opcode = encoding[0].slice();
+            encoding[1].forEach(usage => {
+                if (usage.shift > 0) {
+                    opcode[usage.wordIndex] |= (values[usage.paramIndex] << usage.shift) & usage.mask;
+                }
+                else {
+                    opcode[usage.wordIndex] |= (values[usage.paramIndex] >> -usage.shift) & usage.mask;
+                }
+            });
+            outputArray.push(...opcode);
+            return;
+        }
+        console.error(`Error parsing ${this.name} ${params.join(", ")}: parameters do not match any variant of this instruction`);
+    }
+}
 // TODO: macros, usb (see email), think about testing and evaluation (is it useful) (github pages to host)
 // VERSION CONTROL
 // find people to test it
 // automated testing
 /* Skipped instructions:
- * adiw
- * elpm
- * ld (X,Y,Z)
- * lpm
- * movw
- * sbiw
- * spm
- * st
+ * lds (16-bit)
  * sts
 */
 const r_16_23 = new Set([16, 17, 18, 19, 20, 21, 22, 23]);
@@ -320,6 +403,7 @@ tstEncoder.paramUsages.push(new ParamUsage(0, 0, 4, 0x1f0));
 const encoders = {
     adc: new GeneralEncoder("adc", "dr", "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     add: new GeneralEncoder("add", "dr", "000011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    adiw: new GeneralEncoder("adiw", "dK", "10010110KKddKKKK", ["word", new Set([24, 26, 28, 30])], ["number", 6, false]),
     and: new GeneralEncoder("and", "dr", "001011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     andi: new ImmediateEncoder("andi", 0b0111),
     asr: new GeneralEncoder("asr", "d", "1001010ddddd0101", ["register", 5, false]),
@@ -369,6 +453,7 @@ const encoders = {
     des: new GeneralEncoder("des", "K", "10010100KKKK1011", ["number", 4, false]),
     eicall: new GeneralEncoder("eicall", "", "1001010100011001"),
     eijmp: new GeneralEncoder("eijmp", "", "1001010000011001"),
+    elpm: new MultiOpcodeEncoder("elpm", ["", "1001010111011000", []], ["dZ", "1001000ddddd0110", [[/^r([0-9]+)$/i, 5], [/^Z$/i, 0]]], ["dZ", "1001000ddddd0111", [[/^r([0-9]+)$/i, 5], [/^Z\+$/i, 0]]]),
     eor: new GeneralEncoder("eor", "dr", "001001rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     fmul: new GeneralEncoder("fmul", "dr", "000000110ddd1rrr", ["register", r_16_23], ["register", r_16_23]),
     fmuls: new GeneralEncoder("fmuls", "dr", "000000111ddd0rrr", ["register", r_16_23], ["register", r_16_23]),
@@ -381,11 +466,15 @@ const encoders = {
     lac: new GeneralEncoder("lac", "Zr", "1001001rrrrr0110", ["Z", 0, false], ["register", 5, false]),
     las: new GeneralEncoder("las", "Zr", "1001001rrrrr0101", ["Z", 0, false], ["register", 5, false]),
     lat: new GeneralEncoder("lat", "Zr", "1001001rrrrr0111", ["Z", 0, false], ["register", 5, false]),
+    ld: new MultiOpcodeEncoder("ld", ["dX", "1001000ddddd1100", [[/^r([0-9]+)$/i, 5], [/^X$/i, 0]]], ["dX", "1001000ddddd1101", [[/^r([0-9]+)$/i, 5], [/^X\+$/i, 0]]], ["dX", "1001000ddddd1110", [[/^r([0-9]+)$/i, 5], [/^-X$/i, 0]]], ["dY", "1000000ddddd1000", [[/^r([0-9]+)$/i, 5], [/^Y$/i, 0]]], ["dY", "1001000ddddd1001", [[/^r([0-9]+)$/i, 5], [/^Y\+$/i, 0]]], ["dY", "1001000ddddd1010", [[/^r([0-9]+)$/i, 5], [/^-Y$/i, 0]]], ["dZ", "1000000ddddd0000", [[/^r([0-9]+)$/i, 5], [/^Z$/i, 0]]], ["dZ", "1001000ddddd0001", [[/^r([0-9]+)$/i, 5], [/^Z\+$/i, 0]]], ["dZ", "1001000ddddd0010", [[/^r([0-9]+)$/i, 5], [/^-Z$/i, 0]]]),
+    ldd: new MultiOpcodeEncoder("ldd", ["dq", "10q0qq0ddddd1qqq", [[/^r([0-9]+)$/i, 5], [/^Y\+([0-9]+)$/i, 6]]], ["dq", "10q0qq0ddddd0qqq", [[/^r([0-9]+)$/i, 5], [/^Z\+([0-9]+)$/i, 6]]]),
     ldi: new ImmediateEncoder("ldi", 0b1110),
     lds: new GeneralEncoder("lds", "dk", "1001000ddddd0000kkkkkkkkkkkkkkkk", ["register", 5, false], ["number", 16, false]), // FIXME: aliased
+    lpm: new MultiOpcodeEncoder("lpm", ["", "1001010111001000", []], ["dZ", "1001000ddddd0100", [[/^r([0-9]+)$/i, 5], [/^Z$/i, 0]]], ["dZ", "1001000ddddd0101", [[/^r([0-9]+)$/i, 5], [/^Z\+$/i, 0]]]),
     lsl: lslEncoder,
     lsr: new GeneralEncoder("lsr", "d", "1001010ddddd0110", ["register", 5, false]),
     mov: new GeneralEncoder("mov", "dr", "001011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    movw: new GeneralEncoder("movw", "rd", "00000001ddddrrrr", ["word", 4, false], ["word", 4, false]),
     mul: new GeneralEncoder("mul", "dr", "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     muls: new GeneralEncoder("muls", "dr", "00000010ddddrrrr", ["register", r_16_31], ["register", r_16_31]),
     mulsu: new GeneralEncoder("mulsu", "dr", "000000110ddd0rrr", ["register", r_16_23], ["register", r_16_23]),
@@ -407,6 +496,7 @@ const encoders = {
     sbi: new GeneralEncoder("sbi", "Ab", "10011010AAAAAbbb", ["number", 5, false], ["number", 3, false]),
     sbic: new GeneralEncoder("sbic", "Ab", "10011001AAAAAbbb", ["number", 5, false], ["number", 3, false]),
     sbis: new GeneralEncoder("sbis", "Ab", "10011011AAAAAbbb", ["number", 5, false], ["number", 3, false]),
+    sbiw: new GeneralEncoder("sbiw", "dK", "10010111KKddKKKK", ["word", new Set([24, 26, 28, 30])], ["number", 6, false]),
     sbr: new ImmediateEncoder("sbr", 0b0110),
     sbrc: new GeneralEncoder("sbrc", "rb", "1111110rrrrr0bbb", ["register", 5, false], ["number", 3, false]),
     sbrs: new GeneralEncoder("sbrs", "rb", "1111111rrrrr0bbb", ["register", 5, false], ["number", 3, false]),
@@ -420,6 +510,9 @@ const encoders = {
     sev: new GeneralEncoder("sev", "", "1001010000111000"),
     sez: new GeneralEncoder("sez", "", "1001010000011000"),
     sleep: new GeneralEncoder("sleep", "", "1001010110001000"),
+    spm: new MultiOpcodeEncoder("spm", ["", "1001010111101000", []], ["Z", "1001010111111000", [[/^Z\+$/i, 0]]]),
+    st: new MultiOpcodeEncoder("st", ["Xr", "1001001rrrrr1100", [[/^X$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Xr", "1001001rrrrr1101", [[/^X\+$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Xr", "1001001rrrrr1110", [[/^-X$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Yr", "1000001rrrrr1000", [[/^Y$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Yr", "1001001rrrrr1001", [[/^Y\+$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Yr", "1001001rrrrr1010", [[/^-Y$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Zr", "1000001rrrrr0000", [[/^Z$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Zr", "1001001rrrrr0001", [[/^Z\+$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Zr", "1001001rrrrr0010", [[/^-Z$/i, 0], [/^r([0-9]+)$/i, 5]]]),
+    std: new MultiOpcodeEncoder("std", ["qr", "10q0qq1rrrrr1qqq", [[/^Y\+([0-9]+)$/i, 6], [/^r([0-9]+)$/i, 5]]], ["qr", "10q0qq1rrrrr0qqq", [[/^Z\+([0-9]+)$/i, 6], [/^r([0-9]+)$/i, 5]]]),
     sub: new GeneralEncoder("sub", "dr", "000110rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     subi: new ImmediateEncoder("subi", 0b0101),
     swap: new GeneralEncoder("swap", "d", "1001010ddddd0010", ["register", 5, false]),
@@ -427,7 +520,7 @@ const encoders = {
     wdr: new GeneralEncoder("wdr", "", "1001010110101000"),
     xch: new GeneralEncoder("xch", "Zr", "1001001rrrrr0100", ["Z", 0, false], ["regiser", 5, false]),
 };
-const lineRegex = /^(?<label>[^;:%]+:)?\s*(?:(?<inst>[A-Za-z0-9]+)(?:\s+(?<param>[^;]*))?)?(?:;.*)?$|^\s*%define\s+(?<const>[^ ]+)\s+(?<value>[^ ]+)\s*(?:;.*)?$/;
+const lineRegex = /^(?<label>[^;:%]+:)?\s*(?:(?<inst>[A-Za-z0-9]+)(?:\s+(?<param>[^;]*))?)?(?:;.*)?$|^\s*%define\s+(?<const>[^ ]+)\s+(?<value>[^ ]+)\s*(?:;.*)?$/i;
 /* Assemble a code block to contiguous memory, starting at offset
  * store found labels in labels
  */
@@ -474,8 +567,8 @@ function doSecondPass(binaryCode, labelUsages, labels) {
     return ab;
 }
 export default function assemble(code) {
-    const labels = {};
-    const constants = {};
+    const labels = new Map();
+    const constants = new Map();
     const lines = code.split('\n');
     const firstPass = assembleBlock(lines, 0, labels, constants);
     return doSecondPass(firstPass[0], firstPass[1], labels);

@@ -23,7 +23,6 @@
 <div style="width: 50%;">
     <button id="assembleButton">Assemble</button>
     <button id="connectButton">Connect</button>
-    <button id="eraseButton">Erase</button>
     <button id="loadButton">Load</button>
     <p hidden id="usbUnsupportedMsg">Your browser does not support WebUSB. Try using Chrome, Edge, or Opera. The assembler will still work in this browser.</p>
     <p>Windows computers need to have a driver set up to interface with the AVR microcontroller. You can set this up using the instructions <a href="https://github.com/tmk/tmk_keyboard/wiki/WinUSB-Driver">here</a>.</p>
@@ -66,15 +65,14 @@ button_down:
     });
     if (navigator.usb) {
         document.getElementById("connectButton").addEventListener("click", connectToDevice);
-        document.getElementById("eraseButton").addEventListener("click", eraseDevice);
         document.getElementById("loadButton").addEventListener("click", () => {
             const asm = assemble(editor.getValue());
+            eraseDevice()
             programDevice(new Uint8Array(asm));
         });
     }
     else {
         document.getElementById("connectButton").disabled = true;
-        document.getElementById("eraseButton").disabled = true;
         document.getElementById("loadButton").disabled = true;
         document.getElementById("usbUnsupportedMsg").hidden = false;
     }
