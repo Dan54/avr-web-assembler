@@ -1,0 +1,164 @@
+gavrasm Gerd's AVR assembler version 4.9 (C)2020 by DG4FAC
+----------------------------------------------------------
+Source file: test.S
+Hex file:    test.hex
+Eeprom file: test.eep
+Compiled:    04.04.2025, 15:31:12
+Pass:        2
+     1: ;    lds r0, 10000
+     2: ;    lds r17, 0x70
+     3: ;    sts 20000, r1
+     4: ;    sts 0x80, r29
+     5: 000000   1C01  adc r0, r1
+     6: 000001   0C23  add r2, r3
+     7: 000002   96CC  adiw r25:r24, 60
+     8: 000003   2045  and r4, r5
+     9: 000004   7AF5  andi r31, 0xA5
+    10: 000005   95E5  asr r30
+    11: 000006   94D8  bclr 5
+    12: 000007   F9E6  bld r30, 6
+    13: 000008   F7DA  brbc 2, 4
+    14: 000009   F017  brbs 7, label_1
+    15: 00000A   F408  brcc label_1
+    16: 00000B   F000  brcs label_1
+    17: label_1:
+    18: 00000C   9598  break
+    19: 00000D   F3F1  breq label_1
+    20: 00000E   F7EC  brge label_1
+    21: 00000F   F7E5  brhc label_1
+    22: 000010   F3DD  brhs label_1
+    23: 000011   F7D7  brid label_1
+    24: 000012   F3CF  brie label_1
+    25: 000013   F3C0  brlo label_1
+    26: 000014   F3BC  brlt label_1
+    27: 000015   F3AA  brmi -10
+    28: 000016   F7A9  brne label_1
+    29: 000017   F7A2  brpl label_1
+    30: 000018   F798  brsh label_1
+    31: 000019   F796  brtc label_1
+    32: 00001A   F38E  brts label_1
+    33: 00001B   F783  brvc label_1
+    34: 00001C   F37B  brvs label_1
+    35: 00001D   9448  bset 4
+    36: 00001E   FBD7  bst r29, 7
+    37: 00001F   940E  call label_1
+        000020   000C
+    38: 000021   98A7  cbi 20, 7
+    39: 000022   7FCB  cbr r28, 4
+    40: 000023   9488  clc
+    41: 000024   94D8  clh
+    42: 000025   94F8  cli
+    43: 000026   94A8  cln
+    44: 000027   2744  clr r20
+    45: 000028   94C8  cls
+    46: 000029   94E8  clt
+    47: 00002A   94B8  clv
+    48: 00002B   9498  clz
+    49: 00002C   9590  com r25
+    50: 00002D   1467  cp r6, r7
+    51: 00002E   0489  cpc r8, r9
+    52: 00002F   3CE8  cpi r30, 200
+    53: 000030   10AB  cpse r10, r11
+    54: 000031   956A  dec r22
+    55: 000032   94CB  des 0x0C
+    56: 000033   9519  eicall
+    57: 000034   9419  eijmp
+    58: 000035   95D8  elpm
+    59: 000036   9136  elpm r19, Z
+    60: 000037   9117  elpm r17, Z+
+    61: 000038   24CD  eor r12, r13
+    62: 000039   036F  fmul r22, r23
+    63: 00003A   03C5  fmuls r20, r21
+    64: 00003B   0389  fmulsu r16, r17
+    65: 00003C   9509  icall
+    66: 00003D   9409  ijmp
+    67: 00003E   B529  in r18, 41
+    68: 00003F   9503  inc r16
+    69: 000040   940C  jmp 100
+        000041   0064
+    70: 000042   9356  lac Z, r21
+    71: 000043   9365  las Z, r22
+    72: 000044   9377  lat Z, r23
+    73: 000045   910C  ld r16, X
+    74: 000046   911D  ld r17, X+
+    75: 000047   912E  ld r18, -X
+    76: 000048   8138  ld r19, Y
+    77: 000049   9149  ld r20, Y+
+    78: 00004A   915A  ld r21, -Y
+    79: 00004B   A96D  ldd r22, Y+53
+    80: 00004C   8170  ld r23, Z
+    81: 00004D   9181  ld r24, Z+
+    82: 00004E   9192  ld r25, -Z
+    83: 00004F   A5A3  ldd r26, Z+43
+    84: 000050   E98D  ldi r24, 157
+    85: 000051   95C8  lpm
+    86: 000052   91D4  lpm r29, Z
+    87: 000053   91C5  lpm r28, Z+
+    88: 000054   0F11  lsl r17
+    89: 000055   9526  lsr r18
+    90: 000056   2CEF  mov r14, r15
+    91: 000057   018A  movw r17:r16, r21:r20
+    92: 000058   9F10  mul r17, r16
+    93: 000059   029A  muls r25, r26
+    94: 00005A   0367  mulsu r22, r23
+    95: 00005B   9531  neg r19
+    96: 00005C   0000  nop
+    97: 00005D   2B32  or r19, r18
+    98: 00005E   6CB4  ori r27, 196
+    99: 00005F   BD11  out 33, r17
+   100: 000060   905F  pop r5
+   101: 000061   926F  push r6
+   102: 000062   DFEB  rcall -20
+   103: 000063   9508  ret
+   104: 000064   9518  reti
+   105: 000065   CFA6  rjmp label_1
+   106: 000066   1F77  rol r23
+   107: 000067   95E7  ror r30
+   108: 000068   0B45  sbc r20, r21
+   109: 000069   4E91  sbci r25, 225
+   110: 00006A   9A9D  sbi 19, 5
+   111: 00006B   99A6  sbic 20, 6
+   112: 00006C   99AF  sbic 21, 7
+   113: 00006D   97F3  sbiw r31:r30, 51
+   114: 00006E   6C1D  sbr r17, 205
+   115: 00006F   FDD4  sbrc r29, 4
+   116: 000070   FFD5  sbrs r29, 5
+   117: 000071   9408  sec
+   118: 000072   9458  seh
+   119: 000073   9478  sei
+   120: 000074   9428  sen
+   121: 000075   EF4F  ser r20
+   122: 000076   9448  ses
+   123: 000077   9468  set
+   124: 000078   9438  sev
+   125: 000079   9418  sez
+   126: 00007A   9588  sleep
+   127: 00007B   95E8  spm
+   128: 00007C   95F8  spm Z+
+   129: 00007D   920C  st X, r0
+   130: 00007E   921D  st X+, r1
+   131: 00007F   922E  st -X, r2
+   132: 000080   8238  st Y, r3
+   133: 000081   9249  st Y+, r4
+   134: 000082   925A  st -Y, r5
+   135: 000083   A668  std Y+40, r6
+   136: 000084   8270  st Z, r7
+   137: 000085   9281  st Z+, r8
+   138: 000086   9292  st -Z, r9
+   139: 000087   AAA3  std Z+51, r10
+   140: 000088   1B67  sub r22, r23
+   141: 000089   5841  subi r20, 129
+   142: 00008A   9472  swap r7
+   143: 00008B   2088  tst r8
+   144: 00008C   95A8  wdr
+   145: 00008D   92B4  xch Z, r11
+ -> Warning 006: No device defined, no syntax checking!
+ -> Warning 010: Instruction set unclear, no documentation!
+
+Program             :      142 words.
+Constants           :        0 words.
+Total program memory:      142 words.
+Eeprom space        :        0 bytes.
+Data segment        :        0 bytes.
+Compilation completed, no errors.
+Compilation ended 04.04.2025, 15:31:12

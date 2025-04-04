@@ -316,7 +316,7 @@ class ImmediateEncoder extends Encoder {
             console.error(`Could not parse parameter 0 of ${this.name} ${params.join(', ')} (${params[0]}); expected r16-r31`);
         }
         const valueStr = constants.get(params[0]) || params[0];
-        let value = GeneralEncoder.parseNumber(valueStr);
+        let value = Encoder.parseNumber(valueStr);
         if (!Number.isInteger(value)) {
             value = 0;
             console.error(`Could not parse parameter 1 of ${this.name} ${params.join(', ')} (${params[1]}); expected integer`);
@@ -612,15 +612,19 @@ function assembleBlock(lines: string[], offset: number, labels: Map<string, numb
     const binaryCode = []; // an array holding 16 bit words for the assembled code
     const labelUsages = [];
     lines.forEach(line => {
-        const match = line.match(lineRegex)?.groups;
-        if (match !== undefined) {
-            if (match.label) {
-                const labelName = match.label.substring(0, match.label.length - 1).trim();
+        const match = line.match(lineRegex);
+        const groups = match?.groups;
+        if (groups !== undefined) {
+            if (groups.label) {
+                const labelName = groups.label.substring(0, groups.label.length - 1).trim();
                 labels.set(labelName, binaryCode.length + offset);
             }
-            if (match.inst) {
-                const instName = match.inst.toLowerCase();
-                const params = (match.param || '').split(',').map(s => s.trim());
+            if (groups.inst) {
+                const instName = groups.inst.toLowerCase();
+                let params = (groups.param || '').split(',').map(s => s.trim());
+                if (params.length === 1 && params[1] === '') {
+                    params = [];
+                }
                 if (instName in encoders) {
                     encoders[instName].encode(params, binaryCode.length + offset, labelUsages, binaryCode, constants);
                 }
@@ -628,11 +632,11 @@ function assembleBlock(lines: string[], offset: number, labels: Map<string, numb
                     console.error(`${instName} is not a valid instruction name`);
                 }
             }
-            if (match.const) {
-                constants.set(match.const, constants.get(match.value) || match.value);
+            if (groups.const) {
+                constants.set(groups.const, constants.get(groups.value) || groups.value);
             }
         }
-        else {
+        else if (match === undefined) {
             console.error(`Syntax error: ${line}`);
         }
     });
