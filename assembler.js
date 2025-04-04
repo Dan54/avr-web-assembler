@@ -9,7 +9,7 @@ Core chapters: title like browser based assembler implementation
 Testing and evaluation chapter(s) - no bugs, is it useful?
 Conclusions - summarise again, reflections (use I here), future work (new project's worth) (e.g. reference, emulator or compiler)
 */
-import defaultMacros from "./macros";
+import defaultMacros from "./macros.js";
 class ParamUsage {
     constructor(paramIndex, wordIndex, shift, mask) {
         this.paramIndex = paramIndex;
