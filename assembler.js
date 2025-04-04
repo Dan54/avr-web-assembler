@@ -10,6 +10,7 @@ Testing and evaluation chapter(s) - no bugs, is it useful?
 Conclusions - summarise again, reflections (use I here), future work (new project's worth) (e.g. reference, emulator or compiler)
 */
 import defaultMacros from "./macros.js";
+console.log(`Loaded ${defaultMacros.size} macros`);
 class ParamUsage {
     constructor(paramIndex, wordIndex, shift, mask) {
         this.paramIndex = paramIndex;
@@ -77,7 +78,7 @@ class LabelUsage {
         this.offset = offset;
     }
     evaluate(labels) {
-        let answer = labels[this.label] - this.offset;
+        let answer = labels.get(this.label) - this.offset;
         if (this.shift < 0) {
             answer >>>= -this.shift;
         }
@@ -121,7 +122,7 @@ class GeneralEncoder extends Encoder {
         const paramValues = [];
         const isLabel = [];
         for (let i = 0; i < params.length; i++) {
-            const p = constants[params[i]] || params[i];
+            const p = constants.get(params[i]) || params[i];
             const t = this.paramTypes[i];
             let pValue = 0;
             let useLabel = false;
@@ -271,7 +272,7 @@ class ImmediateEncoder extends Encoder {
             console.error(`Could not encode ${this.name} ${params.join(", ")}: expected 2 parameters, received ${params.length}`);
             return;
         }
-        const registerStr = constants[params[0]] || params[0];
+        const registerStr = constants.get(params[0]) || params[0];
         let register = parseInt(registerStr.substring(1));
         if (!Number.isInteger(register)) {
             register = 16;
@@ -280,7 +281,7 @@ class ImmediateEncoder extends Encoder {
         else if (registerStr[0] !== 'r' || register < 16 || register >= 32) {
             console.error(`Could not parse parameter 0 of ${this.name} ${params.join(', ')} (${params[0]}); expected r16-r31`);
         }
-        const valueStr = constants[params[0]] || params[0];
+        const valueStr = constants.get(params[0]) || params[0];
         let value = GeneralEncoder.parseNumber(valueStr);
         if (!Number.isInteger(value)) {
             value = 0;
@@ -303,7 +304,7 @@ class CBREncoder extends Encoder {
         super();
     }
     encode(params, _index, _labelUsages, outputArray, constants) {
-        const registerStr = constants[params[0]] || params[0];
+        const registerStr = constants.get(params[0]) || params[0];
         let register = parseInt(registerStr.substring(1));
         if (!Number.isInteger(register)) {
             register = 16;
@@ -312,7 +313,7 @@ class CBREncoder extends Encoder {
         else if (registerStr[0] !== 'r' || register < 16 || register >= 32) {
             console.error(`Could not parse parameter 0 of cbr ${params.join(', ')} (${params[0]}); expected r16-r31`);
         }
-        const valueStr = constants[params[0]] || params[0];
+        const valueStr = constants.get(params[0]) || params[0];
         let value = GeneralEncoder.parseNumber(valueStr);
         if (!Number.isInteger(value)) {
             value = 0;
@@ -344,7 +345,7 @@ class MultiOpcodeEncoder extends Encoder {
             }
             const values = [];
             for (let j = 0; j < params.length; j++) {
-                const param = constants[params[j]] || params[j];
+                const param = constants.get(params[j]) || params[j];
                 const match = param.match(encoding[2][j][0]);
                 if (match === null) {
                     valid = false;
@@ -534,7 +535,7 @@ function assembleBlock(lines, offset, labels, constants) {
         if (match !== undefined) {
             if (match.label) {
                 const labelName = match.label.substring(0, match.label.length - 1).trim();
-                labels[labelName] = binaryCode.length + offset;
+                labels.set(labelName, binaryCode.length + offset);
             }
             if (match.inst) {
                 const instName = match.inst.toLowerCase();
@@ -547,7 +548,7 @@ function assembleBlock(lines, offset, labels, constants) {
                 }
             }
             if (match.const) {
-                constants[match.const] = constants[match.value] || match.value;
+                constants.set(match.const, constants.get(match.value) || match.value);
             }
         }
         else {
