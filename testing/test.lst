@@ -3,7 +3,7 @@ gavrasm Gerd's AVR assembler version 4.9 (C)2020 by DG4FAC
 Source file: test.S
 Hex file:    test.hex
 Eeprom file: test.eep
-Compiled:    04.04.2025, 15:31:12
+Compiled:    04.04.2025, 17:55:58
 Pass:        2
      1: ;    lds r0, 10000
      2: ;    lds r17, 0x70
@@ -17,7 +17,7 @@ Pass:        2
     10: 000005   95E5  asr r30
     11: 000006   94D8  bclr 5
     12: 000007   F9E6  bld r30, 6
-    13: 000008   F7DA  brbc 2, 4
+    13: 000008   F41A  brbc 2, label_1
     14: 000009   F017  brbs 7, label_1
     15: 00000A   F408  brcc label_1
     16: 00000B   F000  brcs label_1
@@ -31,7 +31,7 @@ Pass:        2
     24: 000012   F3CF  brie label_1
     25: 000013   F3C0  brlo label_1
     26: 000014   F3BC  brlt label_1
-    27: 000015   F3AA  brmi -10
+    27: 000015   F3B2  brmi label_1
     28: 000016   F7A9  brne label_1
     29: 000017   F7A2  brpl label_1
     30: 000018   F798  brsh label_1
@@ -108,7 +108,7 @@ Pass:        2
     99: 00005F   BD11  out 33, r17
    100: 000060   905F  pop r5
    101: 000061   926F  push r6
-   102: 000062   DFEB  rcall -20
+   102: 000062   DFA9  rcall label_1
    103: 000063   9508  ret
    104: 000064   9518  reti
    105: 000065   CFA6  rjmp label_1
@@ -161,4 +161,4 @@ Total program memory:      142 words.
 Eeprom space        :        0 bytes.
 Data segment        :        0 bytes.
 Compilation completed, no errors.
-Compilation ended 04.04.2025, 15:31:12
+Compilation ended 04.04.2025, 17:55:58

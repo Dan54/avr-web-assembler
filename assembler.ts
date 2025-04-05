@@ -11,6 +11,10 @@ Testing and evaluation chapter(s) - no bugs, is it useful?
 Conclusions - summarise again, reflections (use I here), future work (new project's worth) (e.g. reference, emulator or compiler)
 */
 
+//Relative jumps: gavrasm treats numbers passed in as absoulte addresses (i.e. rjmp 4 will attempt to jump to location 4)
+// it also doesn't like negative numbers here
+// we treat these as relative (rjmp 4 jumps 4 words forwards)
+
 import defaultMacros from "./macros.js";
 
 console.log(`Loaded ${defaultMacros.size} macros`);
@@ -315,7 +319,7 @@ class ImmediateEncoder extends Encoder {
         else if (registerStr[0] !== 'r' || register < 16 || register >= 32) {
             console.error(`Could not parse parameter 0 of ${this.name} ${params.join(', ')} (${params[0]}); expected r16-r31`);
         }
-        const valueStr = constants.get(params[0]) || params[0];
+        const valueStr = constants.get(params[1]) || params[1];
         let value = Encoder.parseNumber(valueStr);
         if (!Number.isInteger(value)) {
             value = 0;
@@ -324,7 +328,7 @@ class ImmediateEncoder extends Encoder {
         if (value < 0 || value >= 256) {
             console.warn(`Parameter 1 of ${this.name} ${params.join(', ')} (${params[1]}) out of range: expected [0..256)`)
         }
-        outputArray.push((this.prefix << 12) | ((value & 0xf0) << 8) | ((register & 0xf) << 4) | (value & 0xf));
+        outputArray.push((this.prefix << 12) | ((value & 0xf0) << 4) | ((register & 0xf) << 4) | (value & 0xf));
     }
     constructor(name: string, prefix: number) {
         super()
@@ -348,8 +352,8 @@ class CBREncoder extends Encoder {
         else if (registerStr[0] !== 'r' || register < 16 || register >= 32) {
             console.error(`Could not parse parameter 0 of cbr ${params.join(', ')} (${params[0]}); expected r16-r31`);
         }
-        const valueStr = constants.get(params[0]) || params[0];
-        let value = GeneralEncoder.parseNumber(valueStr);
+        const valueStr = constants.get(params[1]) || params[1];
+        let value = Encoder.parseNumber(valueStr);
         if (!Number.isInteger(value)) {
             value = 0;
             console.error(`Could not parse parameter 1 of cbr ${params.join(', ')} (${params[1]}); expected integer`);
@@ -358,7 +362,7 @@ class CBREncoder extends Encoder {
             console.warn(`Parameter 1 of cbr ${params.join(', ')} (${params[1]}) out of range: expected [0..256)`)
         }
         // use xor to automatically take the one's complement
-        outputArray.push(0b0111_1111_0000_1111 ^ ((value & 0xf0) << 8) ^ ((register & 0xf) << 4) ^ (value & 0xf));
+        outputArray.push(0b0111_1111_0000_1111 ^ ((value & 0xf0) << 4) ^ ((register & 0xf) << 4) ^ (value & 0xf));
     }
 }
 
@@ -449,7 +453,7 @@ const encoders = {
     adc: new GeneralEncoder("adc", "dr",   "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     add: new GeneralEncoder("add", "dr",   "000011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     adiw: new GeneralEncoder("adiw", "dK", "10010110KKddKKKK", ["word", new Set([24,26,28,30])], ["number", 6, false]),
-    and: new GeneralEncoder("and", "dr",   "001011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    and: new GeneralEncoder("and", "dr",   "001000rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     andi: new ImmediateEncoder("andi", 0b0111),
     asr: new GeneralEncoder("asr", "d",    "1001010ddddd0101", ["register", 5, false]),
     bclr: new GeneralEncoder("bclr", "s",  "100101001sss1000", ["number", 3, false]),
@@ -540,15 +544,15 @@ const encoders = {
     lsl: lslEncoder,
     lsr: new GeneralEncoder("lsr", "d",    "1001010ddddd0110", ["register", 5, false]),
     mov: new GeneralEncoder("mov", "dr",   "001011rdddddrrrr", ["register", 5, false], ["register", 5, false]),
-    movw: new GeneralEncoder("movw", "rd", "00000001ddddrrrr", ["word", 4, false], ["word", 4, false]),
-    mul: new GeneralEncoder("mul", "dr",   "000111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
+    movw: new GeneralEncoder("movw", "dr", "00000001ddddrrrr", ["word", 4, false], ["word", 4, false]),
+    mul: new GeneralEncoder("mul", "dr",   "100111rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     muls: new GeneralEncoder("muls", "dr", "00000010ddddrrrr", ["register", r_16_31], ["register", r_16_31]),
     mulsu: new GeneralEncoder("mulsu","dr","000000110ddd0rrr", ["register", r_16_23], ["register", r_16_23]),
     neg: new GeneralEncoder("neg", "d",    "1001010ddddd0001", ["register", 5, false]),
     nop: new GeneralEncoder("nop", "",     "0000000000000000"),
     or: new GeneralEncoder("or", "dr",     "001010rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     ori: new ImmediateEncoder("ori", 0b0110),
-    out: new GeneralEncoder("out", "dA",   "10111AAdddddAAAA", ["register", 5, false], ["number", 6, false]),
+    out: new GeneralEncoder("out", "Ad",   "10111AAdddddAAAA", ["number", 6, false], ["register", 5, false]),
     pop: new GeneralEncoder("pop", "d",    "1001000ddddd1111", ["register", 5, false]),
     push: new GeneralEncoder("push", "d",  "1001001ddddd1111", ["register", 5, false]),
     rcall: new GeneralEncoder("rcall", "k","1101kkkkkkkkkkkk", ["relative", 12, true]),
@@ -600,7 +604,7 @@ const encoders = {
     swap: new GeneralEncoder("swap", "d",  "1001010ddddd0010", ["register", 5, false]),
     tst: tstEncoder,
     wdr: new GeneralEncoder("wdr", "",     "1001010110101000"),
-    xch: new GeneralEncoder("xch", "Zr",   "1001001rrrrr0100", ["Z", 0, false], ["regiser", 5, false]),
+    xch: new GeneralEncoder("xch", "Zr",   "1001001rrrrr0100", ["Z", 0, false], ["register", 5, false]),
 };
 
 const lineRegex = /^(?<label>[^;:%]+:)?\s*(?:(?<inst>[A-Za-z0-9]+)(?:\s+(?<param>[^;]*))?)?(?:;.*)?$|^\s*%define\s+(?<const>[^ ]+)\s+(?<value>[^ ]+)\s*(?:;.*)?$/i;
@@ -622,7 +626,7 @@ function assembleBlock(lines: string[], offset: number, labels: Map<string, numb
             if (groups.inst) {
                 const instName = groups.inst.toLowerCase();
                 let params = (groups.param || '').split(',').map(s => s.trim());
-                if (params.length === 1 && params[1] === '') {
+                if (params.length === 1 && params[0] === '') {
                     params = [];
                 }
                 if (instName in encoders) {

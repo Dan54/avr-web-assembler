@@ -35,8 +35,8 @@ export class HexWriter {
         this.currentPosition = newPos
     }
     writeBytes(data: ArrayBuffer): void {
-        for (let i = 0; i < data.byteLength; i += 255) {
-            this.writeBytesUnchecked(data.slice(i, i + 255));
+        for (let i = 0; i < data.byteLength; i += 16) { // limit line length
+            this.writeBytesUnchecked(data.slice(i, i + 16));
         }
     }
     // Write provided bytes, requires 0 < data.byteLength < 256
@@ -61,6 +61,7 @@ export class HexWriter {
         if (newPosition >>> 16 != this.currentPosition >>> 16) { // moved to new 2^16 byte section
             this.validPosition = false;
         }
+        this.currentPosition = newPosition;
     }
     close(): string {
         this.lines.push(":00000001FF");

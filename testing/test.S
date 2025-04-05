@@ -10,7 +10,7 @@
     asr r30
     bclr 5
     bld r30, 6
-    brbc 2, 4
+    brbc 2, label_1
     brbs 7, label_1
     brcc label_1
     brcs label_1
@@ -24,7 +24,7 @@ label_1:
     brie label_1
     brlo label_1
     brlt label_1
-    brmi -10
+    brmi label_1
     brne label_1
     brpl label_1
     brsh label_1
@@ -99,7 +99,7 @@ label_1:
     out 33, r17
     pop r5
     push r6
-    rcall -20
+    rcall label_1
     ret
     reti
     rjmp label_1
