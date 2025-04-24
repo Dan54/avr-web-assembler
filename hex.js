@@ -25,6 +25,9 @@ export class HexWriter {
         this.validPosition = false;
     }
     gotoPosition(newPos) {
+        if (newPos >>> 16 != this.currentPosition >>> 16) { // moved to new 2^16 byte section
+            this.validPosition = false;
+        }
         this.currentPosition = newPos;
     }
     writeBytes(data) {
@@ -35,7 +38,7 @@ export class HexWriter {
     // Write provided bytes, requires 0 < data.byteLength < 256
     writeBytesUnchecked(data) {
         if (!this.validPosition) {
-            const posCheckSum = 255 & -(6 + (this.currentPosition >>> 20) + (this.currentPosition >>> 16));
+            const posCheckSum = 255 & -(6 + (this.currentPosition >>> 24) + (this.currentPosition >>> 16));
             this.lines.push(":02000004" +
                 (this.currentPosition >>> 16).toString(16).padStart(4, '0').toUpperCase() +
                 byteToHex[posCheckSum]);

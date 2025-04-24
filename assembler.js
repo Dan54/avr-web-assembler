@@ -10,7 +10,7 @@ Testing and evaluation chapter(s) - no bugs, is it useful?
 Conclusions - summarise again, reflections (use I here), future work (new project's worth) (e.g. reference, emulator or compiler)
 */
 //Relative jumps: gavrasm treats numbers passed in as absoulte addresses (i.e. rjmp 4 will attempt to jump to location 4)
-// it also really doesn't like negative numbers here
+// it also doesn't like negative numbers here
 // we treat these as relative (rjmp 4 jumps 4 words forwards)
 import defaultMacros from "./macros.js";
 console.log(`Loaded ${defaultMacros.size} macros`);
