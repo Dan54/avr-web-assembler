@@ -21,9 +21,12 @@
 </head>
 <body>
 <div style="width: 50%;">
-    <button id="assembleButton">Assemble</button>
+    <button id="assembleButton">Download HEX File</button>
     <button id="connectButton">Connect</button>
-    <button id="loadButton">Load</button>
+    <button id="loadButton">Load to Device</button>
+    <button id="readButton">Load Saved Assembly</button>
+    <button id="saveButton">Save Assembly</button>
+    <button id="loadPrevButton">Load Last Assembled Code</button>
     <p hidden id="usbUnsupportedMsg">Your browser does not support WebUSB. Try using Chrome, Edge, or Opera. The assembler will still work in this browser.</p>
     <p>Windows computers need to have a driver set up to interface with the AVR microcontroller. You can set this up using the instructions <a href="https://github.com/tmk/tmk_keyboard/wiki/WinUSB-Driver">here</a>.</p>
 </div>
@@ -46,6 +49,7 @@ button_down:
     editor.setTheme("ace/theme/twilight");
     //editor.session.setMode("ace/mode/javascript");
     document.getElementById("assembleButton").addEventListener("click", () => {
+        window.localStorage.setItem('lastAssemble', editor.getValue());
         const asm = assemble(editor.getValue());
         console.log(arrayBufferToHex(asm));
         const hw = new HexWriter();
@@ -63,9 +67,19 @@ button_down:
 
         document.body.removeChild(downloadElement);
     });
+    document.getElementById("loadPrevButton").addEventListener("click", () => {
+        editor.setValue(window.localStorage.getItem('lastAssemble'), -1);
+    });
+    document.getElementById("saveButton").addEventListener("click", () => {
+        window.localStorage.setItem('savedCode', editor.getValue());
+    });
+    document.getElementById("readButton").addEventListener("click", () => {
+        editor.setValue(window.localStorage.getItem('savedCode'), -1);
+    });
     if (navigator.usb) {
         document.getElementById("connectButton").addEventListener("click", connectToDevice);
         document.getElementById("loadButton").addEventListener("click", () => {
+            window.localStorage.setItem('lastAssemble', editor.getValue());
             const asm = assemble(editor.getValue());
             eraseDevice()
             programDevice(new Uint8Array(asm));
