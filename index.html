@@ -51,7 +51,6 @@ button_down:
     document.getElementById("assembleButton").addEventListener("click", () => {
         window.localStorage.setItem('lastAssemble', editor.getValue());
         const asm = assemble(editor.getValue());
-        console.log(arrayBufferToHex(asm));
         const hw = new HexWriter();
         hw.writeBytes(asm);
         console.log(hw);
@@ -62,9 +61,9 @@ button_down:
         
         downloadElement.style.display = 'none';
         document.body.appendChild(downloadElement);
-
+        
         downloadElement.click();
-
+        
         document.body.removeChild(downloadElement);
     });
     document.getElementById("loadPrevButton").addEventListener("click", () => {
@@ -81,6 +80,7 @@ button_down:
         document.getElementById("loadButton").addEventListener("click", () => {
             window.localStorage.setItem('lastAssemble', editor.getValue());
             const asm = assemble(editor.getValue());
+            console.log(arrayBufferToHex(asm));
             eraseDevice()
             programDevice(new Uint8Array(asm));
         });
