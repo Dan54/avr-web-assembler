@@ -392,8 +392,7 @@ class MultiOpcodeEncoder extends Encoder {
 // find people to test it
 // automated testing
 /* Skipped instructions:
- * lds (16-bit)
- * sts
+ * lds / sts (16-bit)
 */
 const r_16_23 = new Set([16, 17, 18, 19, 20, 21, 22, 23]);
 const r_16_31 = new Set([16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]);
@@ -518,6 +517,7 @@ const encoders = {
     spm: new MultiOpcodeEncoder("spm", ["", "1001010111101000", []], ["Z", "1001010111111000", [[/^Z\+$/i, 0]]]),
     st: new MultiOpcodeEncoder("st", ["Xr", "1001001rrrrr1100", [[/^X$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Xr", "1001001rrrrr1101", [[/^X\+$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Xr", "1001001rrrrr1110", [[/^-X$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Yr", "1000001rrrrr1000", [[/^Y$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Yr", "1001001rrrrr1001", [[/^Y\+$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Yr", "1001001rrrrr1010", [[/^-Y$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Zr", "1000001rrrrr0000", [[/^Z$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Zr", "1001001rrrrr0001", [[/^Z\+$/i, 0], [/^r([0-9]+)$/i, 5]]], ["Zr", "1001001rrrrr0010", [[/^-Z$/i, 0], [/^r([0-9]+)$/i, 5]]]),
     std: new MultiOpcodeEncoder("std", ["qr", "10q0qq1rrrrr1qqq", [[/^Y\+([0-9]+)$/i, 6], [/^r([0-9]+)$/i, 5]]], ["qr", "10q0qq1rrrrr0qqq", [[/^Z\+([0-9]+)$/i, 6], [/^r([0-9]+)$/i, 5]]]),
+    sts: new GeneralEncoder("sts", "dk", "1001001ddddd0000kkkkkkkkkkkkkkkk", ["register", 5, false], ["number", 16, false]), // FIXME: aliased
     sub: new GeneralEncoder("sub", "dr", "000110rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     subi: new ImmediateEncoder("subi", 0b0101),
     swap: new GeneralEncoder("swap", "d", "1001010ddddd0010", ["register", 5, false]),
