@@ -47,7 +47,7 @@ button_down:
     import {eraseDevice, programDevice, connectToDevice} from "./programmer.js";
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/twilight");
-    //editor.session.setMode("ace/mode/javascript");
+    editor.session.setMode("ace/mode/assembly");
     document.getElementById("assembleButton").addEventListener("click", () => {
         window.localStorage.setItem('lastAssemble', editor.getValue());
         const asm = assemble(editor.getValue());
