@@ -598,7 +598,7 @@ const encoders = {
         ["qr", "10q0qq1rrrrr1qqq", [[/^Y\+([0-9]+)$/i, 6], [/^r([0-9]+)$/i, 5]]],
         ["qr", "10q0qq1rrrrr0qqq", [[/^Z\+([0-9]+)$/i, 6], [/^r([0-9]+)$/i, 5]]]
     ),
-    sts: new GeneralEncoder("sts", "dk",   "1001001ddddd0000kkkkkkkkkkkkkkkk", ["register", 5, false], ["number", 16, false]), // FIXME: aliased
+    sts: new GeneralEncoder("sts", "kr",   "1001001rrrrr0000kkkkkkkkkkkkkkkk", ["number", 16, false], ["register", 5, false]), // FIXME: aliased
     sub: new GeneralEncoder("sub", "dr",   "000110rdddddrrrr", ["register", 5, false], ["register", 5, false]),
     subi: new ImmediateEncoder("subi", 0b0101),
     swap: new GeneralEncoder("swap", "d",  "1001010ddddd0010", ["register", 5, false]),

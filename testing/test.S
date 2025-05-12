@@ -1,7 +1,7 @@
-;    lds r0, 10000
-;    lds r17, 0x70
-;    sts 20000, r1
-;    sts 0x80, r29
+    lds r0, 10000
+    lds r17, 0x70
+    sts 20000, r1
+    sts 0x80, r29
     adc r0, r1
     add r2, r3
     adiw r25:r24, 60
